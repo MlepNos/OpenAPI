@@ -12,6 +12,8 @@ servers:
 paths:
   /v1/students:
     get:
+      tags:
+        - Basics
       responses:
         '200':
           description: List of students
@@ -28,6 +30,8 @@ paths:
                   maxLength: 100
   /v1/customers:
     get:
+      tags:
+        - Basics
       responses:
         '200':
           description: List of customers
@@ -71,16 +75,18 @@ paths:
                             - AL
                             - AK
                             - AZ
-                            - AR
+                            - AR 
                             - CA
                         zipcode:
                           type: string
-
-
-  #instead of using every time the address object, we can create a address component so that we can reuse it.The code would look like this:
+                
+        
+#instead of using every time the address object, we can create a address component so that we can reuse it.The code would look like this:
 
   /v1/customersShort:
     get:
+      tags:
+        - Using Objects
       responses:
         '200':
           description: List of customers
@@ -111,6 +117,8 @@ paths:
                       $ref: "#/components/schemas/Address"
   /v1/customersShorter:
     get:
+      tags:
+        - Using Objects
       responses:
         '200':
           description: List of customers
@@ -122,9 +130,11 @@ paths:
                 maxItems: 100
                 description: list of customers
                 items:
-                  $ref: "#/components/schemas/customer"
+                  $ref: "#/components/schemas/customer"                       
   /v1/customersShortest:
     get:
+      tags:
+        - Using Objects
       responses:
         '200':
           description: List of customers
@@ -134,72 +144,79 @@ paths:
                 $ref: "#/components/schemas/customerList"
 
     # Using Parameters
-
+    
   /v1/customerParameter:
-    get:
-      parameters:
-        - name: pageNumber
-          in: query
-          description: Page Number
-          schema:
-            type: integer
-            format: int32
-            default: 1
-        - name: pageSize
-          in: query
-          description: Page size
-          required: false
-          schema:
-            type: integer
-            format: int32
-            default: 25
-      responses:
-        '200':
-          description: List of customers
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/customerList"
+   get:
+    tags:
+       - Using Parameter
+    parameters:
+       - name: pageNumber
+         in: query
+         description: Page Number
+         schema:
+           type: integer
+           format: int32
+           default: 1
+       - name: pageSize
+         in: query
+         description: Page size
+         required: false
+         schema:
+           type: integer
+           format: int32
+           default: 25    
+    responses:
+      '200':
+        description: List of customers
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/customerList"
 
   # Using Parameters as components - 169
-  # Using Tags
+  # Using Tags  
   /v1/customerParameterComponents:
-    get:
-      tags:
-        - Customers
-      parameters:
-        - $ref: "#/components/parameters/pageParameters"
-      responses:
-        '200':
-          description: List of customers
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/customerList"
+   get: 
+    tags:
+      - Using Parameters as components
+    parameters:
+      - $ref: "#/components/parameters/pageParameters"
+    responses:
+      '200':
+        description: List of customers
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/customerList"
 
   # Using URL as Parameter
   # Using Summary and Description 195-196
-
+  
 
   /v1/customerParameterURL:
-    get:
-      parameters:
-        - $ref: "#/components/parameters/pageParameters"
-      responses:
-        '200':
-          description: List of customers
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/customerList"
-
+   get:
+    tags:
+        - Using URL as Parameter
+    operationId: listCustomersV1 #operation ID must be unique
+    parameters:
+      - $ref: "#/components/parameters/pageParameters"
+    responses:
+      '200':
+        description: List of customers
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/customerList"
+  
   /v1/customerParameterURL{customerId}: #this is a path parameter {}
     get:
       summary: List of Customers
       description: Get a List of **Customers** in the *System*
       tags:
-        - Customers
-        - Customers2
+        - Using URL as Parameter
+        #- Customers
+        #- Customers2  #it will be in customer and customer 2 tag
+      operationId: getCustomerByIdV1
       parameters:
         - name: customerId
           in: path
@@ -216,7 +233,106 @@ paths:
               schema:
                 $ref: "#/components/schemas/customer"
 
+  #USING POST OPERATION 240
+  #USING HEADERS (Location) 254
 
+  /v2/customerParameterURL:
+   get:
+    tags:
+        - Using Post, Put, Delete Operations and Header
+    operationId: listCustomersV1 #operation ID must be unique
+    parameters:
+      - $ref: "#/components/parameters/pageParameters"
+    responses:
+      '200':
+        description: List of customers
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/customerList"
+   post:
+     summary: New Customer
+     description: Create a new Customer
+     tags:
+       - Using Post, Put, Delete Operations and Header
+     requestBody:
+       required: true
+       content:
+         application/json:
+           schema:
+             $ref: "#/components/schemas/customer"
+     responses:
+       '201':
+         description: Customer Created
+         headers:
+           Location:
+             description: Location of the Created Customer
+             schema:
+               type: string
+               format: uri
+               example: http://example.com/v1/customers/{assignedIdValue}
+       '400':
+         description: Bad Request
+       '409':
+         description: Conflict
+      
+  /v2/customerParameterURL{customerId}: #this is a path parameter {}
+    get:
+      summary: Get Customer by Id
+      description: Get single **Customers** by its Id Value
+      tags:
+        - Using Post, Put, Delete Operations and Header
+      operationId: getCustomerByIdV1
+      parameters: #we will make this parameter as component and use it below on the put operation 303
+        - name: customerId
+          in: path
+          description: Customer Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Found Customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/customer"  
+        '404':
+          description: Not Found
+    put: 
+      summary: Update Customer
+      description: Update Customer by ID
+      tags:
+        - Using Post, Put, Delete Operations and Header
+      parameters:
+        - $ref: "#/components/parameters/customerIdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/customer"
+      responses:
+        '204':
+          description: Customer Updated
+        '400':
+          description: Bad Request  
+        '409':
+          description: Conflict
+    delete:
+      summary: Delete a Customer by ID
+      description: Delete a **Customer** by its Id Value
+      tags:
+        - Using Post, Put, Delete Operations and Header
+      operationId: deleteCustomerV1
+      parameters: #we will make this parameter as component and use it below on the put operation 303
+        - $ref: "#/components/parameters/customerIdPathParam"
+      responses:
+        '200':
+          description: Customer Delete
+        '404':
+          description: Not Found  
 
 ################ COMPONENTS #######################
 
@@ -239,13 +355,13 @@ components:
             - AL
             - AK
             - AZ
-            - AR
+            - AR 
             - CA
         zipcode:
-          type: string
-
-    # we could also make the "customer object" a component so we could reuse it. it is the same line as 115 address
-
+          type: string  
+                        
+# we could also make the "customer object" a component so we could reuse it. it is the same line as 115 address
+    
     customer:
       type: object
       description: customer object
@@ -253,6 +369,7 @@ components:
         id:
           type: string
           format: uuid
+          readOnly: true # the id cant be seen on post operation
         firstname:
           type: string
           minLength: 2
@@ -263,19 +380,19 @@ components:
           minLength: 2
           maxLength: 100
         address:
-          $ref: "#/components/schemas/Address"
+          $ref: "#/components/schemas/Address"   
 
-    # we can make this even shorter by making the array a component
+# we can make this even shorter by making the array a component       
     customerList:
       type: array
       minItems: 1
       maxItems: 100
       description: list of customers
       items:
-        $ref: "#/components/schemas/customer"
+        $ref: "#/components/schemas/customer" 
 
 
-  # we can also make paramaters as components for reuse
+# we can also make paramaters as components for reuse
   parameters:
     pageParameters:
       name: pageNumber
@@ -292,6 +409,14 @@ components:
       schema:
         type: integer
         format: int32
-        default: 1
+        default: 1    
+    customerIdPathParam:
+      name: customerId
+      in: path
+      description: Customer Id
+      required: true
+      schema:
+        type: string
+        format: uuid
 
-
+    
